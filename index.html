@@ -1,101 +1,162 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>html5调用摄像头并拍照</title>
-<meta content="" name="Keywords" />
-<meta content="" name="Description"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<meta name="format-detection" content="telephone=no, email=no">
-<meta name="HandheldFriendly" content="true" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,user-scalable=no">
+    <title>Document1</title>
+    <style type='text/css'>
+        * { margin: 0; padding: 0; }
+
+        html, body { height: 100%; }
+
+        .flex { display: flex; }
+
+        .flex-row { flex-direction: row; justify-content: space-around; align-items: center; }
+
+        .flex-column { flex-direction: column; justify-content: flex-start; align-items: center; }
+
+        body { overflow: auto; background: #fff; }
+
+        .title { width: 920px; padding: 30px; align-items: flex-end; }
+
+        .title h1 { padding-bottom: 20px; font-size: 38px; color: #ffffff; text-shadow: 0 1px 3px #222222; }
+
+        .title p { font-size: 18px; color: #f5f5f5; text-shadow: 0 1px 3px #565656; }
+
+        .wrap { width: 1220px; }
+
+        .wrap .reference { position: relative; padding: 10px; background-color: rgba(255, 255, 255, 0); border-radius: 10px; box-shadow: 0 0 20px #a1a19f; }
+
+        .wrap .reference img.face { display: block; width: 320px; height: auto; border-radius: 10px; }
+
+        .wrap .reference img.toggle { position: absolute; right: 10px; top: 10px; width: 50px; height: 50px; }
+
+        .wrap .scan video { background-color: rgba(0, 0, 0, .8); border-radius: 10px; }
+
+        .wrap .control { justify-content: space-around; height: 456px; padding: 0 20px; }
+
+        .wrap .control p { width: 160px; height: 60px; background-color: #f9f9f9; text-align: center; line-height: 60px; color: #ffffff; font-size: 24px; border-radius: 8px; cursor: pointer; box-shadow: -8px -8px 150px -8px #b2b3b5 inset, 0 0 5px #222222; text-shadow: 0 0 1px #222222; transition: .5s; }
+
+        .wrap .control p:hover { box-shadow: -8px -8px 150px -8px #50c4f1 inset, 0 0 5px #ffffff; }
+
+        .wrap .scan { position: relative; overflow: hidden; }
+
+        .wrap .scan .strainer { position: absolute; top: 10px; width: 320px; z-index: 999; height: 3px; }
+
+        .wrap .scan .capture { width: 320px; height: 456px; }
+
+        .wrap .scan .strainer.on { background: linear-gradient(to left, transparent, #0bffb2, transparent); animation: scan 1s linear infinite; }
+
+        @keyframes scan {
+            0% { top: 10px; }
+            50% { top: 456px; }
+            100% { top: 10px; }
+        }
+
+    </style>
+    <script type="text/javascript" src="vconsole.min.js"></script>
 </head>
 <body>
+    <div class="title flex flex-column">
+</div>
+<div class="wrap flex flex-row">
+    <div class="control flex flex-column">
+        <p class="open">开启摄像头</p>
+        <p class="recognition">显示到Canvas</p>
+        <p class="close">关闭摄像头</p>
+    </div>
+    <div class="scan reference">
+        <div class="strainer"></div>
+        <video class="capture" width="320" height="456" src=""></video>
+    </div>
 
+</div>
 
-<style type="text/css">
-*{  padding:0; margin:0; }
-body{ padding:0 10px }
-h1,h3,h4{ margin:10px 0; }
-#video{ background:#000; display:block; }
-#snap{ width:100px; height:40px; line-height:40px; margin:10px 0;     }
-#photo{ width:320px; height:320px;  background-repeat:no-repeat; background:#000 }
-#text{ width:320px; height:200px;  }
-</style>
+    <script type="text/javascript">
+        var buffer;
+        var oCapture = document.querySelector(".capture"),
+        open = document.querySelector(".open"),
+        recognition = document.querySelector(".recognition"),
+        close = document.querySelector(".close");
+        var control = document.querySelector(".control");
 
-<h1>html5调用摄像头并拍照</h1>
-<h3 id="support"></h3>
-<video id="video" width="320" height="320"></video>       
-<button id="snap" >拍照</button>        
-<canvas id="canvas" style="display:none" width="320" height="320"></canvas> 
-<div id="photo"></div>
-<h4>获取的base64位PNG图像</h4>
-<textarea id="text"></textarea>
-<script>
+        window.navigator.getUserMedia = navigator.getUserMedia || navigator.webKitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+        
+        function invokingCarera(){
+            if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
+                navigator.mediaDevices.getUserMedia({
+                    'audio':true,
+                    'video':{ 'facingMode': "user" }//调用前置摄像头，后置摄像头使用video: { facingMode: { exact: "environment" } }
+                })
+                .then(function(mediaStream) {console.log(555);getVideoStream(mediaStream)})
+                .catch(function(error) { console.log(666);console.log(error) })
+            }else if(navigator.getUserMedia){
+                navigator.getUserMedia({
+                    'video':true,
+                    'audio':true
+                },getVideoStream,getFail)
+            }else{
+                alert('不支持摄像头调用！')
+            }
+        }
+        //调用成功
+        function getVideoStream(stream){
+            buffer = stream;
+            if(oCapture.mozSrcObject !== undefined){
+                oCapture.mozSrcObject = buffer;
+            }else{
+                oCapture.src = window.URL && window.URL.createObjectURL(buffer);                
+            }
+            oCapture.play();
+        }
+        function getFail(){
 
-	//判断浏览器是否支持HTML5 Canvas
-	window.onload = function () {
-	try {                   
-		//动态创建一个canvas元 ，并获取他2Dcontext。如果出现异常则表示不支持 document.createElement("canvas").getContext("2d");        
-		document.getElementById("support").innerHTML = "浏览器支持HTML5 CANVAS";
-		takePhotos();		
-	}
-	catch (e) {           
-		document.getElementById("support").innerHTML = "浏览器不支持HTML5 CANVAS";}
-	}; 
+        }
+        recognition.onclick = function(){
 
-
-	//拍照主函数
-	function takePhotos(){
-			//这段代 主要是获取摄像头的视频流并显示在Video 签中
-			var canvas = document.getElementById("canvas"),
-			context = canvas.getContext("2d"),
-			video = document.getElementById("video");
-
-			function successCallback(stream) {
-				// Set the source of the video element with the stream from the camera
-				if (video.mozSrcObject !== undefined) {
-					video.mozSrcObject = stream;
-				} else {
-					video.srcObject = stream;
-				}
-				video.play();
-			}
-		
-			function errorCallback(error) {
-				 alert('错误代码: [CODE ' + error.code + ']');
-				// Display a friendly "sorry" message to the user
-			}
-		 
-			navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
-			window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
-		 
-			// Call the getUserMedia method with our callback functions
-			if (navigator.getUserMedia) {
-				navigator.getUserMedia({facingMode: { exact: "environment" }}, successCallback, errorCallback);
-			} else {
-				alert('浏览器不支持getUserMedia.');
-				// Display a friendly "sorry" message to the user
-			}
-
-
-			//这个是拍照按钮的事件，  
-			document.getElementById("snap").onclick = function(){
-			context.drawImage(video, 0, 0, 320, 320);     
-			//获取浏览器页面的画布对象
-			var canvans = document.getElementById("canvas");
-			//以下开始编 数据   
-			var imgData = canvans.toDataURL(); 
-			//将图像转换为base64数据
-			var base64Data = imgData.substr(22); 
-			//将获得的base64数据设置为photo的背景图
-			document.getElementById("photo").style.backgroundImage="url(data:image/png;base64,"+base64Data+")";
-			document.getElementById("text").innerHTML=base64Data;
-
-
-		  }
-	}
- </script> 
-
-
+        }
+        control.addEventListener('click',function(e){
+            e = e || window.event;
+            var className = e.target.className;
+            switch(className){
+                case 'open':
+                invokingCarera();
+                break;
+                case 'close':
+                closeCamera();
+                break;
+                case 'recognition':
+                screenShot();
+                break;
+                default:
+                break;
+            }
+        })
+        function closeCamera(){
+            buffer&&buffer.getTracks()[1].stop();//关闭摄像头
+        }        
+        window.requestAnimFrame = (function(){
+          return  window.requestAnimationFrame       ||
+                  window.webkitRequestAnimationFrame ||
+                  window.mozRequestAnimationFrame    ||
+                  function( callback ){
+                    window.setTimeout(callback, 1000 / 60);
+                  };
+        })();
+        function screenShot(){
+            var canvas = document.createElement('canvas');
+            canvas.width=320,canvas.height = 456;
+            document.querySelector(".wrap").appendChild(canvas);
+            var ctx =  canvas.getContext('2d');
+            function drawVideo(){
+                ctx.drawImage(oCapture,0,0,320,456);
+                ctx.font = "30px sans-serif";
+                ctx.fillStyle = "blue";
+                ctx.fillText("请眨眼", 50, 50);
+                requestAnimationFrame(drawVideo);
+            }
+            window.requestAnimationFrame(drawVideo);
+        }
+    </script>
 </body>
 </html>
